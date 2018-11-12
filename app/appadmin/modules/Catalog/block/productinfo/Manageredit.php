@@ -397,6 +397,7 @@ class Manageredit extends AppadminbaseBlockEdit implements AppadminbaseBlockEdit
                 //exit;
             }
         }
+        
         $this->_service->save($this->_param, 'catalog/product/index');
         
         $errors = Yii::$service->helper->errors->get();

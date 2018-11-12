@@ -51,6 +51,24 @@ class AppadminController extends FecadminbaseController
          */
     }
 
+    public function beforeAction($action)
+    {
+        $moduleId = Yii::$app->controller->module->id;
+        $controllerId = $this->id;
+        $actionId = $this->action->id;
+        $currentUrlKey = "/$moduleId/$controllerId/$actionId";
+        $resources = Yii::$service->admin->role->getCurrentRoleResources();
+        if (is_array($resources) && isset($resources[$currentUrlKey]) && $resources[$currentUrlKey]) {
+            Yii::$service->admin->systemLog->save(); 
+            return true;
+        } else {
+            echo  json_encode([
+                'statusCode' => '300',
+                'message' => 'you do not have role',
+            ]);
+            exit;
+        }
+    }
     
 
     /**
@@ -87,7 +105,7 @@ class AppadminController extends FecadminbaseController
         throw new InvalidValueException('layout file is not exist!');
     }
     
-    public function getBlock($blockname=''){
+    public function getFecadminBlock($blockname=''){
 	    $_currentNameSpace = \fec\helpers\CModule::param("_currentNameSpace");
 		//echo $_currentNameSpace;exit;
         if(empty($_currentNameSpace)){
@@ -115,5 +133,26 @@ class AppadminController extends FecadminbaseController
         
 		return new $blockFile;
 		
+    }
+
+    public function getBlock($blockName = ''){
+        if (!$blockName) {
+            $blockName = $this->action->id;
+        }
+        if (!$this->blockNamespace) {
+            $this->blockNamespace = Yii::$app->controller->module->blockNamespace;
+        }
+        if (!$this->blockNamespace) {
+            throw new \yii\web\HttpException(406, 'blockNamespace is empty , you should config it in module->blockNamespace or controller blockNamespace ');
+        }
+        $viewId = $this->id;
+        $viewId = str_replace('/', '\\', $viewId);
+        $relativeFile = '\\'.$this->blockNamespace;
+        $relativeFile .= '\\'.$viewId.'\\'.ucfirst($blockName);
+        //查找是否在rewriteMap中存在重写
+        $relativeFile = Yii::mapGetName($relativeFile);
+
+        return new $relativeFile();
+
     }
 }
